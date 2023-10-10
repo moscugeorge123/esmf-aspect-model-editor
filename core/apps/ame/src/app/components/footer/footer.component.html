@@ -10,7 +10,7 @@
   ~
   ~ SPDX-License-Identifier: MPL-2.0
   -->
-
+<button (click)="toLoading()">Loading</button>
 <p class="changes" *ngIf="savedModel$ | async as savedModel">
   <span>{{ savedModel.changed ? 'There are currently unsaved changes' : 'All changes have been saved' }}</span>
   <span *ngIf="savedModel.date">|</span>

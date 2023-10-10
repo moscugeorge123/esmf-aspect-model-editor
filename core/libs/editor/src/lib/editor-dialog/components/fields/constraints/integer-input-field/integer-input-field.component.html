@@ -11,7 +11,7 @@
   ~ SPDX-License-Identifier: MPL-2.0
   -->
 
-<div fxLayout="column">
+<div>
   <mat-form-field [floatLabel]="getControl('integer')?.disabled ? 'always' : 'auto'" appearance="fill">
     <mat-label>integer</mat-label>
     <input matInput name="integer" [formControl]="getControl('integer')" data-cy="integer" type="number" pattern="^[1-9]\d*$" />

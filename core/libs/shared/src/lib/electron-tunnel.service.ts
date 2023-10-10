@@ -30,6 +30,18 @@ export class ElectronTunnelService {
     this.onServiceNotStarted();
   }
 
+  public openWindow(config: any) {
+    if (!this.ipcRenderer) {
+      this.notificationsService.error({
+        title: 'Application not opened in electron',
+        message: 'To open a new window, please open the application through electron',
+      });
+      return;
+    }
+
+    this.ipcRenderer.send('create-window', config);
+  }
+
   private onServiceNotStarted() {
     this.ipcRenderer.on('backend-startup-error', () => {
       this.notificationsService.error({title: 'Backend not started. Try to reopen the application'});

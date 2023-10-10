@@ -50,6 +50,7 @@ Thumbs.db
 **/.cache
 **/electron
 **/.files
+**/.log
 lsp
 
 # cypress

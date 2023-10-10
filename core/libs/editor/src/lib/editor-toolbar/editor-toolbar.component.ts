@@ -22,7 +22,14 @@ import {
   MxGraphShapeSelectorService,
 } from '@ame/mx-graph';
 import {ConfigurationService, Settings} from '@ame/settings-dialog';
-import {BindingsService, LoadingScreenOptions, LoadingScreenService, NotificationsService, cellRelations} from '@ame/shared';
+import {
+  BindingsService,
+  ElectronTunnelService,
+  LoadingScreenOptions,
+  LoadingScreenService,
+  NotificationsService,
+  cellRelations,
+} from '@ame/shared';
 import {EditorService} from '../editor.service';
 import {ShapeConnectorService, ShapeConnectorUtil} from '@ame/connection';
 import {FileHandlingService, GenerateHandlingService, InformationHandlingService} from './services';
@@ -78,7 +85,8 @@ export class EditorToolbarComponent implements AfterViewInit, OnInit, OnDestroy 
     private matDialog: MatDialog,
     private namespaceManagerService: NamespacesManagerService,
     private shapeSettingsService: ShapeSettingsService,
-    private loadingScreenService: LoadingScreenService
+    private loadingScreenService: LoadingScreenService,
+    private electronService: ElectronTunnelService
   ) {}
 
   ngOnInit(): void {
@@ -98,6 +106,10 @@ export class EditorToolbarComponent implements AfterViewInit, OnInit, OnDestroy 
 
   ngOnDestroy() {
     clearInterval(this.checkChangesInterval);
+  }
+
+  openWindow() {
+    this.electronService.openWindow({});
   }
 
   // Deactivates the bug where the shape can not be removed

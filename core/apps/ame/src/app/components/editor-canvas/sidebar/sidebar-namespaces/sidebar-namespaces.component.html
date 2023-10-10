@@ -77,6 +77,16 @@
                 [disabled]="
                   isCurrentFile(namespace.name, file) || namespace.getFileStatus(file)?.outdated || namespace.getFileStatus(file)?.hasErrors
                 "
+                (click)="loadInNewWindow(namespace, file)"
+                mat-menu-item
+                data-cy="fileMenuLoadAspectModelButton"
+              >
+                Load in new window
+              </button>
+              <button
+                [disabled]="
+                  isCurrentFile(namespace.name, file) || namespace.getFileStatus(file)?.outdated || namespace.getFileStatus(file)?.hasErrors
+                "
                 (click)="onLoadAspectModel(namespace, file)"
                 mat-menu-item
                 data-cy="fileMenuLoadAspectModelButton"

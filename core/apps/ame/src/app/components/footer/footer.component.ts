@@ -13,6 +13,7 @@
 
 import {Component, inject} from '@angular/core';
 import {EditorService} from '@ame/editor';
+import {Router} from '@angular/router';
 
 @Component({
   selector: 'ame-footer',
@@ -21,5 +22,11 @@ import {EditorService} from '@ame/editor';
 })
 export class FooterComponent {
   private editorService = inject(EditorService);
+  private router = inject(Router);
   public savedModel$ = this.editorService.savedRdf$;
+
+  toLoading() {
+    console.log('CLicked loading');
+    this.router.navigate(['loading']);
+  }
 }

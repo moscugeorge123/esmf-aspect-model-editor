@@ -11,7 +11,7 @@
  * SPDX-License-Identifier: MPL-2.0
  */
 
-import {APP_CONFIG, AppConfig, NamespaceModel} from '@ame/shared';
+import {APP_CONFIG, AppConfig, ElectronTunnelService, NamespaceModel} from '@ame/shared';
 import {Component, EventEmitter, Inject, Input, OnChanges, Output, SimpleChanges} from '@angular/core';
 import {NamespacesCacheService} from '@ame/cache';
 import {RdfService} from '@ame/rdf/services';
@@ -55,6 +55,7 @@ export class SidebarNamespacesComponent implements OnChanges {
     private rdfService: RdfService,
     private migratorService: MigratorService,
     private namespaceManagerService: NamespacesManagerService,
+    private electronService: ElectronTunnelService,
     @Inject(APP_CONFIG) public config: AppConfig
   ) {}
 
@@ -123,6 +124,10 @@ export class SidebarNamespacesComponent implements OnChanges {
 
   public onLoadAspectModel(namespace: NamespaceModel, namespaceFile: string) {
     this.loadNamespaceFile.emit(`${namespace.name}:${namespaceFile}`);
+  }
+
+  public loadInNewWindow(namespace: NamespaceModel, namespaceFile: string) {
+    this.electronService.openWindow({namespace: namespace.name, namespaceFile});
   }
 
   public importNamespace(event: any) {

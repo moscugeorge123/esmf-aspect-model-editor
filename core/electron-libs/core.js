@@ -65,14 +65,16 @@ function createWindow() {
     mainWindow.loadFile('./dist/apps/ame/index.html').then(() => console.log('Application successfully launched'));
   }
 
-  mainWindow.maximize();
+  // mainWindow.maximize();
   mainWindow.show();
   mainWindow.removeMenu();
   mainWindow.on('closed', () => (mainWindow = null));
 
-  electronLocalShortcut.register(mainWindow, 'CommandOrControl+F12', () => {
-    mainWindow.webContents.openDevTools();
-  });
+  if (process.argv.includes('--dev')) {
+    electronLocalShortcut.register(mainWindow, 'CommandOrControl+F12', () => {
+      mainWindow.webContents.openDevTools();
+    });
+  }
 
   mainWindow.webContents.setWindowOpenHandler(() => {
     return {action: 'allow', overrideBrowserWindowOptions: {width: 1280, height: 720}};
