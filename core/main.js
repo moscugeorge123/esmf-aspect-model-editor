@@ -14,24 +14,26 @@
 const {app, BrowserWindow, Menu} = require('electron');
 const platformData = require('./electron-libs/os-checker').default;
 const core = require('./electron-libs/core').default;
-const {WindowsManager} = require('./electron-libs/windows-manager');
+const {windowsManager} = require('./electron-libs/windows-manager');
 
 if (require('electron-squirrel-startup')) process.exit();
+
+if (!process.argv.includes('--dev')) {
+  // Disable test logging on production
+  console.log = () => {};
+}
 
 Menu.setApplicationMenu(null);
 
 app.on('ready', () => {
   core.startService();
-  const windowsManager = new WindowsManager();
-  windowsManager.listenForOpeningWindow();
+  windowsManager.activateListeners();
 });
 
 app.on('activate', () => {
   // Re-create window on MacOS when dock icon is clicked
   if (BrowserWindow.getAllWindows().length === 0) {
-    core.createWindow();
-    const windowsManager = new WindowsManager();
-    windowsManager.listenForOpeningWindow();
+    // windowsManager.createWindow();
   }
 });
 

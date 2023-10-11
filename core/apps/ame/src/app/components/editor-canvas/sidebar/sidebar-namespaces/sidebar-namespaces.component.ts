@@ -127,7 +127,8 @@ export class SidebarNamespacesComponent implements OnChanges {
   }
 
   public loadInNewWindow(namespace: NamespaceModel, namespaceFile: string) {
-    this.electronService.openWindow({namespace: namespace.name, namespaceFile});
+    console.log(namespace.name, namespaceFile);
+    this.electronService.openWindow({namespace: namespace.name, file: namespaceFile});
   }
 
   public importNamespace(event: any) {

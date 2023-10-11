@@ -109,7 +109,7 @@ export class EditorToolbarComponent implements AfterViewInit, OnInit, OnDestroy 
   }
 
   openWindow() {
-    this.electronService.openWindow({});
+    this.electronService.openWindow();
   }
 
   // Deactivates the bug where the shape can not be removed

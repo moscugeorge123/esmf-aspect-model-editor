@@ -16,15 +16,14 @@ import {Title} from '@angular/platform-browser';
 import {Observable, of} from 'rxjs';
 import {catchError, first, switchMap, tap} from 'rxjs/operators';
 import {DomainModelToRdfService} from '@ame/aspect-exporter';
-import {BrowserService, ElectronTunnelService, LogService, NotificationsService, SidebarService} from '@ame/shared';
+import {BrowserService, ElectronTunnelService, LogService, NotificationsService} from '@ame/shared';
 import {EditorService} from '@ame/editor';
 import {ModelApiService} from '@ame/api';
 import {MatDialog} from '@angular/material/dialog';
 import {StartLoadModalComponent} from './components/start-load-modal/start-load-modal.component';
 import {ConfigurationService} from '@ame/settings-dialog';
 import {ThemeService} from '@ame/mx-graph';
-import {MigratorService} from '@ame/migrator';
-import {Router} from '@angular/router';
+import {StartupService} from './startup.service';
 
 @Component({
   selector: 'ame-root',
@@ -46,9 +45,7 @@ export class AppComponent implements OnInit {
     private electronTunnelService: ElectronTunnelService,
     private configurationService: ConfigurationService,
     private themeService: ThemeService,
-    private migratorService: MigratorService,
-    private sidebarService: SidebarService,
-    private router: Router
+    private startupService: StartupService
   ) {
     this.domainModelToRdf.listenForStoreUpdates();
   }
@@ -63,11 +60,13 @@ export class AppComponent implements OnInit {
       return;
     }
 
-    this.migratorService.startMigrating().subscribe(() => {
-      this.startApplication();
-      this.sidebarService.refreshSidebarNamespaces();
-      this.router.navigate([{outlets: {migrator: null, 'export-namespaces': null, 'import-namespaces': null}}]);
-    });
+    this.startupService.listenForLoading();
+
+    // this.migratorService.startMigrating().subscribe(() => {
+    //   this.startApplication();
+    //   this.sidebarService.refreshSidebarNamespaces();
+    //   this.router.navigate([{outlets: {migrator: null, 'export-namespaces': null, 'import-namespaces': null}}]);
+    // });
   }
 
   private startApplication() {

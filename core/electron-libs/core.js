@@ -14,11 +14,10 @@
 const {BrowserWindow} = require('electron');
 const {spawn} = require('child_process');
 const path = require('path');
-const electronLocalShortcut = require('electron-localshortcut');
-const electronRemote = require('@electron/remote/main');
 const promises = require('./promisify');
 const portfinder = require('portfinder');
 const platformData = require('./os-checker').default;
+const {windowsManager} = require('./windows-manager');
 
 /**
  * @type string[]
@@ -42,47 +41,6 @@ async function cleanUpProcesses() {
   }
 }
 
-function createWindow() {
-  const iconPathArray = ['..', 'apps', 'ame', 'src', 'assets', 'img', 'png', 'aspect-model-editor-targetsize-192.png'];
-  const iconPath = path.join(__dirname, ...iconPathArray);
-
-  mainWindow = new BrowserWindow({
-    show: false,
-    icon: iconPath,
-    webPreferences: {
-      nodeIntegration: true,
-      enableRemoteModule: true,
-      contextIsolation: false,
-    },
-  });
-
-  electronRemote.initialize();
-  electronRemote.enable(mainWindow.webContents);
-
-  if (process.argv.includes('--dev')) {
-    mainWindow.loadURL('http://localhost:4200/').then(() => console.log('Dev mode launched'));
-  } else {
-    mainWindow.loadFile('./dist/apps/ame/index.html').then(() => console.log('Application successfully launched'));
-  }
-
-  // mainWindow.maximize();
-  mainWindow.show();
-  mainWindow.removeMenu();
-  mainWindow.on('closed', () => (mainWindow = null));
-
-  if (process.argv.includes('--dev')) {
-    electronLocalShortcut.register(mainWindow, 'CommandOrControl+F12', () => {
-      mainWindow.webContents.openDevTools();
-    });
-  }
-
-  mainWindow.webContents.setWindowOpenHandler(() => {
-    return {action: 'allow', overrideBrowserWindowOptions: {width: 1280, height: 720}};
-  });
-
-  return mainWindow;
-}
-
 function startService() {
   portfinder
     .getPortPromise({
@@ -98,7 +56,7 @@ function startService() {
         loader.stdout.on('data', data => {
           if (data.includes(`Tomcat started on port(s): ${port}`)) {
             console.log(`Tomcat is now started on port ${port}`);
-            createWindow();
+            windowsManager.createWindow();
           }
         });
 
@@ -124,7 +82,6 @@ function startService() {
 
 exports.default = {
   mainWindow,
-  createWindow,
   cleanUpProcesses,
   startService,
 };

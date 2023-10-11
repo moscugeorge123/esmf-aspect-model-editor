@@ -1,12 +1,64 @@
-import {Component} from '@angular/core';
+import {ModelApiService} from '@ame/api';
+import {ElectronTunnelService, StartupData} from '@ame/shared';
+import {AfterViewInit, Component, NgZone, OnDestroy} from '@angular/core';
 import {Router} from '@angular/router';
+import {Observable, Subscription, forkJoin, switchMap, take} from 'rxjs';
 
 @Component({
   templateUrl: 'loading.component.html',
   styleUrls: ['loading.component.scss'],
 })
-export class LoadingComponent {
-  constructor(private router: Router) {
-    window['router'] = this.router;
+export class LoadingComponent implements AfterViewInit, OnDestroy {
+  private subscription = new Subscription();
+
+  constructor(
+    private router: Router,
+    private electronTunnel: ElectronTunnelService,
+    private modelApiService: ModelApiService,
+    private ngZone: NgZone
+  ) {}
+
+  ngAfterViewInit(): void {
+    const sub = this.electronTunnel
+      .requestStartupData()
+      .pipe(
+        switchMap((data: StartupData) => {
+          this.electronTunnel.setWindowInfo(data.id, data.options);
+          return forkJoin({
+            isFirstWindow: this.electronTunnel.isFirstWindow(),
+            model: this.loadModelText(),
+          });
+        }),
+        take(1)
+      )
+      .subscribe({
+        next: data => {
+          this.electronTunnel.tmpData = data;
+        },
+        error: error => console.log(error),
+        complete: () => {
+          // Because complete is called in electron callback, router.navigate
+          // needs to be called in ngZone to function
+          this.ngZone.run(() => {
+            this.router.navigate(['/editor']);
+          });
+        },
+      });
+
+    this.subscription.add(sub);
+  }
+
+  ngOnDestroy(): void {
+    this.subscription.unsubscribe();
+  }
+
+  loadModelText(): Observable<string> {
+    console.log(this.electronTunnel.windowInfo.options);
+    if (!this.electronTunnel.windowInfo.options) {
+      return this.modelApiService.getDefaultAspectModel();
+    }
+
+    const {namespace, file} = this.electronTunnel.windowInfo.options;
+    return this.modelApiService.getAspectMetaModel(`${namespace}:${file}`);
   }
 }
