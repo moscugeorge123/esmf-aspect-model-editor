@@ -19,26 +19,32 @@ export class LoadingComponent implements AfterViewInit, OnDestroy {
   ) {}
 
   ngAfterViewInit(): void {
+    if (!this.electronTunnel.ipcRenderer) {
+      this.modelApiService.getDefaultAspectModel().subscribe(model => {
+        this.electronTunnel.startUpData$.next({isFirstWindow: true, model});
+        this.router.navigate(['/editor']);
+      });
+      return;
+    }
+
     const sub = this.electronTunnel
       .requestStartupData()
       .pipe(
         switchMap((data: StartupData) => {
           this.electronTunnel.setWindowInfo(data.id, data.options);
-          return forkJoin({
-            isFirstWindow: this.electronTunnel.isFirstWindow(),
-            model: this.loadModelText(),
-          });
+          return forkJoin([this.electronTunnel.isFirstWindow(), this.loadModelText()]);
         }),
         take(1)
       )
       .subscribe({
-        next: data => {
-          this.electronTunnel.tmpData = data;
+        next: ([isFirstWindow, model]) => {
+          this.electronTunnel.startUpData$.next({isFirstWindow, model});
         },
         error: error => console.log(error),
         complete: () => {
-          // Because complete is called in electron callback, router.navigate
-          // needs to be called in ngZone to function
+          // Because complete is called in electron callback,
+          // router.navigate is called outside ngZone
+          // and needs to be called in ngZone to function
           this.ngZone.run(() => {
             this.router.navigate(['/editor']);
           });
@@ -53,7 +59,6 @@ export class LoadingComponent implements AfterViewInit, OnDestroy {
   }
 
   loadModelText(): Observable<string> {
-    console.log(this.electronTunnel.windowInfo.options);
     if (!this.electronTunnel.windowInfo.options) {
       return this.modelApiService.getDefaultAspectModel();
     }

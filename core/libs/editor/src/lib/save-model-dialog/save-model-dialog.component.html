@@ -1,0 +1,11 @@
+<h2 matDialogTitle>Save model?</h2>
+
+<mat-dialog-content>
+  <p>You are about to exit with unsaved changes!</p>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button [disabled]="disabledButton" mat-button (click)="close(false)">Cancel</button>
+  <button [disabled]="disabledButton" mat-flat-button (click)="close(true)">Close window</button>
+  <button [disabled]="disabledButton" mat-flat-button color="primary" (click)="saveModel()">Save changes</button>
+</mat-dialog-actions>

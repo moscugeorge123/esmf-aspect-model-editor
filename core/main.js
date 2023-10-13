@@ -27,13 +27,13 @@ Menu.setApplicationMenu(null);
 
 app.on('ready', () => {
   core.startService();
-  windowsManager.activateListeners();
+  windowsManager.activateCommunicationProtocol();
 });
 
 app.on('activate', () => {
   // Re-create window on MacOS when dock icon is clicked
   if (BrowserWindow.getAllWindows().length === 0) {
-    // windowsManager.createWindow();
+    windowsManager.createWindow();
   }
 });
 

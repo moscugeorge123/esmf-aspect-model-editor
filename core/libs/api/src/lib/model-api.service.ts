@@ -174,7 +174,6 @@ export class ModelApiService {
 
   getAspectMetaModel(absoluteModelName: string): Observable<string> {
     const [namespace, version, file] = absoluteModelName.split(':');
-    console.log(new HttpHeaderBuilder().withContentTypeRdfTurtle().withNamespace(`${namespace}:${version}`).withFileName(file).build());
 
     return this.http
       .get<string>(`${this.serviceUrl}${this.api.models}`, {

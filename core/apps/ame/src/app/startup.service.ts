@@ -1,39 +1,39 @@
 import {EditorService} from '@ame/editor';
 import {MigratorService} from '@ame/migrator';
-import {ElectronTunnelService, SidebarService} from '@ame/shared';
+import {ElectronTunnelService, ModelSavingTrackerService, SidebarService} from '@ame/shared';
 import {Injectable} from '@angular/core';
 import {NavigationEnd, Router} from '@angular/router';
-import {Observable, filter, of, switchMap, take} from 'rxjs';
+import {Observable, filter, of, switchMap, take, tap} from 'rxjs';
 
 @Injectable({providedIn: 'root'})
 export class StartupService {
   constructor(
     private migratorService: MigratorService,
     private sidebarService: SidebarService,
-    private electronTunnel: ElectronTunnelService,
     private router: Router,
-    private editorService: EditorService
+    private editorService: EditorService,
+    private modelSaveTracker: ModelSavingTrackerService,
+    private electronTunnelService: ElectronTunnelService
   ) {}
 
   listenForLoading() {
     this.router.events
       .pipe(
         filter(ev => ev instanceof NavigationEnd && ev.url.includes('/editor')),
+        switchMap(() => this.electronTunnelService.startUpData$.asObservable()),
+        filter(Boolean),
         take(1),
-        switchMap(() => {
-          return this.electronTunnel.tmpData?.isFirstWindow ? this.migratorService.startMigrating() : of();
-        }),
-        switchMap(() => this.loadModel())
+        switchMap(({isFirstWindow, model}) =>
+          (isFirstWindow ? this.migratorService.startMigrating() : of()).pipe(switchMap(() => this.loadModel(model)))
+        )
       )
-      .subscribe(e => {
-        console.log(e);
+      .subscribe(() => {
         this.sidebarService.refreshSidebarNamespaces();
         this.router.navigate([{outlets: {migrator: null, 'export-namespaces': null, 'import-namespaces': null}}]);
       });
   }
 
-  loadModel(): Observable<any> {
-    const model: string = this.electronTunnel.tmpData?.model;
-    return this.editorService.loadNewAspectModel(model, '');
+  loadModel(model: string): Observable<any> {
+    return this.editorService.loadNewAspectModel(model, '').pipe(tap(() => this.modelSaveTracker.updateSavedModel()));
   }
 }

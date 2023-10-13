@@ -11,6 +11,11 @@
  * SPDX-License-Identifier: MPL-2.0
  */
 
+// @ts-check
+
+/** @typedef {{namespace: string, file: string, editElement?: string}} WindowOptions */
+/** @typedef {{id: string, window: BrowserWindow, options: WindowOptions}} WindowInfo */
+
 const {BrowserWindow, ipcMain} = require('electron');
 const electronRemote = require('@electron/remote/main');
 const path = require('path');
@@ -22,6 +27,8 @@ const {
   RESPONSE_IS_FIRST_WINDOW,
   REQUEST_STARTUP_DATA,
   RESPONSE_STARTUP_DATA,
+  REQUEST_IS_FILE_SAVED,
+  REQUEST_CLOSE_WINDOW,
 } = require('./events');
 
 function uuid() {
@@ -34,7 +41,7 @@ function uuid() {
 
 class WindowsManager {
   #windowConfig = {
-    show: false,
+    show: true,
     icon: this.#getIcon(),
     webPreferences: {
       nodeIntegration: true,
@@ -43,9 +50,10 @@ class WindowsManager {
     },
   };
 
+  /** @type {WindowInfo[]} */
   activeWindows = [];
 
-  activateListeners() {
+  activateCommunicationProtocol() {
     ipcMain.on(REQUEST_CREATE_WINDOW, (e, options) => {
       this.createWindow(options);
     });
@@ -60,10 +68,31 @@ class WindowsManager {
     ipcMain.on(REQUEST_IS_FIRST_WINDOW, event => {
       event.sender.send(RESPONSE_IS_FIRST_WINDOW, true);
     });
+
+    ipcMain.on(REQUEST_CLOSE_WINDOW, (event, windowId) => {
+      const win = this.activeWindows.find(windowInfo => windowId === windowInfo.id)?.window;
+      if (!win) {
+        return;
+      }
+
+      win.destroy();
+    });
   }
 
+  /** @param {WindowOptions} options */
   createWindow(options) {
+    const createdWindow = options
+      ? this.activeWindows.find(winInfo => options.namespace === winInfo.options?.namespace && winInfo.options?.file === options.file)
+      : null;
+
+    if (createdWindow) {
+      createdWindow.window.focus();
+      return;
+    }
+
     const newWindow = new BrowserWindow(this.#windowConfig);
+
+    /** @type {WindowInfo} */
     const windowInfo = {
       id: uuid(),
       window: newWindow,
@@ -71,24 +100,35 @@ class WindowsManager {
     };
 
     this.#configureWindow(windowInfo);
+    this.#setWindowListeners(windowInfo);
+
     if (!this.activeWindows.length) {
       electronRemote.initialize();
     }
 
     this.activeWindows.push(windowInfo);
     electronRemote.enable(newWindow.webContents);
-    this.#onWindowStartUp(windowInfo);
+    this.#listenForWindowInfoRequest(windowInfo);
     this.#loadApplication(windowInfo);
 
     return newWindow;
   }
 
+  /** @param {WindowInfo} windowInfo */
   #configureWindow(windowInfo) {
     const win = windowInfo.window;
 
     win.show();
     win.removeMenu();
-    win.on('closed', () => {
+
+    win.webContents.setWindowOpenHandler(() => {
+      return {action: 'allow', overrideBrowserWindowOptions: {width: 1280, height: 720}};
+    });
+  }
+
+  /** @param {WindowInfo} windowInfo */
+  #setWindowListeners(windowInfo) {
+    windowInfo.window.on('closed', () => {
       const windowIndex = this.activeWindows.findIndex(({id}) => windowInfo.id === id);
       if (windowIndex >= 0) {
         this.activeWindows.splice(windowIndex, 1);
@@ -96,8 +136,9 @@ class WindowsManager {
       }
     });
 
-    win.webContents.setWindowOpenHandler(() => {
-      return {action: 'allow', overrideBrowserWindowOptions: {width: 1280, height: 720}};
+    windowInfo.window.on('close', event => {
+      event.preventDefault();
+      this.#handleClosingWindow(windowInfo);
     });
   }
 
@@ -106,7 +147,8 @@ class WindowsManager {
     return path.join(__dirname, ...iconPathArray);
   }
 
-  #onWindowStartUp({id, options}) {
+  /** @param {{id: string, options: WindowOptions}} _ */
+  #listenForWindowInfoRequest({id, options}) {
     const executeFn = event => {
       console.log('RECEIVED REQUEST STARTUP DATA');
       event.sender.send(RESPONSE_STARTUP_DATA, {id, options});
@@ -116,6 +158,7 @@ class WindowsManager {
     ipcMain.on(REQUEST_STARTUP_DATA, executeFn);
   }
 
+  /** @param {BrowserWindow} window */
   #enableDevtools(window) {
     window.webContents.openDevTools();
     electronLocalShortcut.register(window, 'CommandOrControl+F12', () => {
@@ -123,6 +166,7 @@ class WindowsManager {
     });
   }
 
+  /** @param {{window: BrowserWindow, id: string}} */
   #loadApplication({window, id}) {
     if (process.argv.includes('--dev')) {
       return window.loadURL('http://localhost:4200').then(() => {
@@ -131,6 +175,11 @@ class WindowsManager {
       });
     }
     return window.loadFile('./dist/apps/ame/index.html').then(() => console.log(`Window ${id} created!`));
+  }
+
+  /** @param {WindowInfo} windowInfo */
+  #handleClosingWindow(windowInfo) {
+    windowInfo.window.webContents.send(REQUEST_IS_FILE_SAVED, windowInfo.id);
   }
 }
 

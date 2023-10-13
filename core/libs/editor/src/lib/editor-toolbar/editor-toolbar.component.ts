@@ -27,6 +27,7 @@ import {
   ElectronTunnelService,
   LoadingScreenOptions,
   LoadingScreenService,
+  ModelSavingTrackerService,
   NotificationsService,
   cellRelations,
 } from '@ame/shared';
@@ -86,7 +87,8 @@ export class EditorToolbarComponent implements AfterViewInit, OnInit, OnDestroy 
     private namespaceManagerService: NamespacesManagerService,
     private shapeSettingsService: ShapeSettingsService,
     private loadingScreenService: LoadingScreenService,
-    private electronService: ElectronTunnelService
+    private electronService: ElectronTunnelService,
+    private modelSaveTracker: ModelSavingTrackerService
   ) {}
 
   ngOnInit(): void {
@@ -160,7 +162,7 @@ export class EditorToolbarComponent implements AfterViewInit, OnInit, OnDestroy 
   }
 
   saveAspectModelToWorkspace() {
-    this.fileHandlingService.saveAspectModelToWorkspace().subscribe();
+    this.fileHandlingService.saveAspectModelToWorkspace().subscribe(() => this.modelSaveTracker.updateSavedModel());
   }
 
   copyToClipboard() {
